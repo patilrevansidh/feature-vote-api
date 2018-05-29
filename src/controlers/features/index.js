@@ -62,15 +62,21 @@ router.put('/:featureId/vote',(req,res)=>{
 })
 
 
-router.delete('/:featureId',(req,res)=>{    
+router.delete('/:featureId',(req,res)=>{
     connection.query("DELETE FROM features WHERE id= ?",[req.params.featureId], function (error, results, fields) {
         if (error) {
             console.log("error in row deletion",error)
             throw error
             res.send(error)
         };
-        const response = helper.prepareSuccessBody(results);
-        res.json(response)
+        connection.query('SELECT * from features', function (error, results, fields) {
+            if (error) {
+                throw error
+                res.send(error)
+            };
+            const response = helper.prepareSuccessBody(results);
+            res.json(response)
+        });
     });
 })
 
