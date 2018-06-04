@@ -8,5 +8,11 @@ const prepareErrorBody = function (message) {
     return response
 }
 
-exports.prepareErrorBody = prepareErrorBody 
-exports.prepareSuccessBody = prepareSuccessBody
+const stringObjToArray = function (obj,key) {
+    const arrObj = JSON.parse(obj)
+    return arrObj[key]
+}
+
+exports.prepareErrorBody = prepareErrorBody;
+exports.prepareSuccessBody = prepareSuccessBody;
+exports.stringObjToArray = stringObjToArray;
