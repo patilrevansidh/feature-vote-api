@@ -2,6 +2,7 @@ var router = require('express').Router();
 
 
 router.use('/auth',require('./auth/login'));
+router.use('/dashboard',require('./dashboard'));
 router.use('/features',require('./features/index'));
 router.use('/comments',require('./comments/index'));
 router.use('/users',require('./users/index'));

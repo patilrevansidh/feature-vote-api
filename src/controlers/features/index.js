@@ -20,7 +20,7 @@ router.get('/',helper.isAuthorized,(req,res)=>{
 
 router.post('/',helper.isAuthorized,(req,res)=>{    
     const voted_people = '';
-    const invited = req.body.invited != undefined ? req.body.invited : '' ;
+    const invited = req.body.invited != undefined ? req.body.invited.toString() : '' ;
     const comments = '';
     const created_by = req.header('user_id');
     connection.query(`INSERT INTO features(title, description, vote, voted_people, invited, comments,created_by) VALUES
