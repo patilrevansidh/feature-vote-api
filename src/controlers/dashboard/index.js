@@ -13,7 +13,7 @@ router.get('/',helper.isAuthorized,(req,res)=>{
         const total_feature = result[0].total_feature;
         const total_vote = result[0].total_vote;
         body = {...body,total_feature, total_vote}
-        res.send(body)
+        res.send(helper.prepareSuccessBody(body))
     });    
 })
 

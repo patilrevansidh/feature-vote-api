@@ -97,10 +97,21 @@ router.post('/:featureId/comments',helper.isAuthorized,(req, res)=>{
             const comments = results[0].comments.split(',').filter(d=>d);
             const newComments = [...comments,`${newId}`]            
             connection.query('UPDATE features SET comments =? where id = ?',[newComments.toString(),feature_id],(error, results, field)=>{
-                connection.query('select * from features',(error,results,fields)=>{
-                    const response = helper.prepareSuccessBody(results)
-                    res.json(response)
-                })
+                connection.query("SELECT * FROM features WHERE id= ?",[req.params.featureId], function (error, results, fields) {
+                    if (error) {
+                        console.log("error in row read",error)
+                        throw error
+                        res.send(error)
+                    };
+                    const response = results;
+                    const comments = results[0].comments.split(',')
+                    const commentsIds = results[0].comments.split(',').filter(d=>parseInt(d))
+                    connection.query('SELECT comments.comment, users.username FROM `comments` RIGHT JOIN users on users.id = comments.comment_by WHERE comments.id IN (?)',[commentsIds],(error,result,fields)=>{
+                        const obj =  {...response[0],comments:result}
+                        const newResponse = helper.prepareSuccessBody(obj)
+                        res.json(newResponse)
+                    })
+                });
             });
         })
     })
