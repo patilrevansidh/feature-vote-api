@@ -10,6 +10,22 @@ router.get('/',(req,res)=>{
     });
 })
 
+router.get('/:groupdId',(req,res)=>{
+    connection.query('SELECT * FROM groups where id = ?',[`${req.params.groupdId}`],(error,result,fields)=>{
+        if (error) throw error
+        const user_ids = result[0] ? result[0].users : []
+        const groupName = result[0].name;
+        connection.query('select username from users where id in (?)',[user_ids.split(',')],(error,result,fields)=>{
+            if (error) throw error;
+            const body = { 
+                name: groupName,
+                users : result
+            }
+            res.send(helper.prepareSuccessBody(body))
+        })
+    });
+})
+
 router.post('/',(req,res)=>{
     const user_ids = req.body.user_ids;
     const grp_name = req.body.name;
