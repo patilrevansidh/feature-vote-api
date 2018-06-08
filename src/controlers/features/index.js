@@ -11,8 +11,19 @@ router.get('/',helper.isAuthorized,(req,res)=>{
             throw error
             res.send(error)
         };
-        console.log("get all features",results)
-        const response = helper.prepareSuccessBody(results);
+        const user_id = req.get('user_id')
+        const features = Array.isArray(results) 
+                       ? results.map((f)=>{
+                            const invited = f.invited.split(',');
+                            if(invited.includes(user_id) || f.created_by == user_id) {
+                                return f
+                            }else{
+                                return undefined
+                            } 
+                          }).filter(f=>f)
+                        :[]
+        console.log("get all features",features)
+        const response = helper.prepareSuccessBody(features);
         res.json(response)
     });
 })

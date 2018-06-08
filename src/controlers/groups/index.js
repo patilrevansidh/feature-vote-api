@@ -26,6 +26,16 @@ router.get('/:groupdId',(req,res)=>{
     });
 })
 
+router.delete('/:groupdId',(req,res)=>{
+    connection.query('delete FROM groups where id = ?',[`${req.params.groupdId}`],(error,result,fields)=>{
+        if (error) throw error
+        connection.query('SELECT * FROM groups',(error,result,fields)=>{
+            if (error) throw error
+            res.json(helper.prepareSuccessBody(result));
+        });
+    });
+})
+
 router.post('/',(req,res)=>{
     const user_ids = req.body.user_ids;
     const grp_name = req.body.name;
