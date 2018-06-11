@@ -149,3 +149,9 @@ router.delete('/:featureId',helper.isAuthorized,(req,res)=>{
 
 
 module.exports = router
+
+// SELECT * FROM `features` ORDER BY id DESC    newest
+// SELECT * FROM `features` ORDER BY vote DESC  most voted
+
+
+ 
