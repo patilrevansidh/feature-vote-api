@@ -6,7 +6,10 @@ const helper = require('../../common/helper/util');
 connection.connect();
 
 router.get('/',helper.isAuthorized,(req,res)=>{
-    connection.query('SELECT * from features',function (error, results, fields) {
+    const filterKey = req.query.newest ? 'id' : 'vote';
+    const filter = req.query.newest || req.query.most ? `ORDER BY ${filterKey} DESC` : 'WHERE 1';
+    const query = `SELECT * from features ${filter}`;
+    connection.query(query,function (error, results, fields) {
         if (error) {
             throw error
             res.send(error)
@@ -22,7 +25,6 @@ router.get('/',helper.isAuthorized,(req,res)=>{
                             } 
                           }).filter(f=>f)
                         :[]
-        console.log("get all features",features)
         const response = helper.prepareSuccessBody(features);
         res.json(response)
     });
@@ -55,12 +57,10 @@ router.get('/:featureId',helper.isAuthorized,(req,res)=>{
     let repo = {}
     connection.query("SELECT * FROM features WHERE id= ?",[req.params.featureId], function (error, results, fields) {
         if (error) {
-            console.log("error in row read",error)
             throw error
-            res.send(error)
         };
-        const voted_people = results[0].voted_people.split(',');
-        const invited_people = results[0].invited.split(',');
+        const voted_people = results[0] && results[0].voted_people.split(',');
+        const invited_people = results[0] && results[0].invited.split(',');
         const non_voted_people = invited_people.filter((i)=>{ if(!voted_people.includes(i)){
                 return i
         } })
@@ -80,7 +80,6 @@ router.get('/:featureId',helper.isAuthorized,(req,res)=>{
         connection.query('SELECT comments.comment, users.username FROM `comments` RIGHT JOIN users on users.id = comments.comment_by WHERE comments.id IN (?)',[commentsIds],(error,result,fields)=>{
             const obj =  {...response[0],comments:result}
             repo = {...repo,...response[0],comments:result}
-            console.log("object",repo)
             const newResponse = helper.prepareSuccessBody(repo)
             res.json(newResponse)
         })
@@ -104,7 +103,6 @@ router.put('/:featureId/vote',helper.isAuthorized,(req, res)=>{
             connection.query('SELECT * from features', function (error, results, fields) {
                 if (error) {
                     throw error
-                    res.send(error)
                 };            
                 const response = helper.prepareSuccessBody(results);
                 res.json(response)
@@ -149,15 +147,12 @@ router.post('/:featureId/comments',helper.isAuthorized,(req, res)=>{
 
 router.delete('/:featureId',helper.isAuthorized,(req,res)=>{
     connection.query("DELETE FROM features WHERE id= ?",[req.params.featureId], function (error, results, fields) {
-        if (error) {
-            console.log("error in row deletion",error)
+        if (error) {            
             throw error
-            res.send(error)
         };
         connection.query('SELECT * from features', function (error, results, fields) {
             if (error) {
-                throw error
-                res.send(error)
+                throw error                
             };
             const response = helper.prepareSuccessBody(results);
             res.json(response)
