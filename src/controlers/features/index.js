@@ -52,18 +52,36 @@ router.post('/',helper.isAuthorized,(req,res)=>{
 })
 
 router.get('/:featureId',helper.isAuthorized,(req,res)=>{
+    let repo = {}
     connection.query("SELECT * FROM features WHERE id= ?",[req.params.featureId], function (error, results, fields) {
         if (error) {
             console.log("error in row read",error)
             throw error
             res.send(error)
         };
+        const voted_people = results[0].voted_people.split(',');
+        const invited_people = results[0].invited.split(',');
+        const non_voted_people = invited_people.filter((i)=>{ if(!voted_people.includes(i)){
+                return i
+        } })
+
+        connection.query('select username from users where id in (?)',[voted_people],(error,results,fields)=>{
+            const voted_users = results; 
+            repo.voted_users = results;
+        })
+
+        connection.query('select username from users where id in (?)',[non_voted_people],(error,results,fields)=>{
+            repo.non_voted_people = results;
+        })
+
         const response = results;
         const comments = results[0].comments.split(',')
         const commentsIds = results[0].comments.split(',').filter(d=>parseInt(d))
         connection.query('SELECT comments.comment, users.username FROM `comments` RIGHT JOIN users on users.id = comments.comment_by WHERE comments.id IN (?)',[commentsIds],(error,result,fields)=>{
             const obj =  {...response[0],comments:result}
-            const newResponse = helper.prepareSuccessBody(obj)
+            repo = {...repo,...response[0],comments:result}
+            console.log("object",repo)
+            const newResponse = helper.prepareSuccessBody(repo)
             res.json(newResponse)
         })
     });
