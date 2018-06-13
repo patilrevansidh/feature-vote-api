@@ -8,7 +8,7 @@ connection.connect();
 router.get('/',helper.isAuthorized,(req,res)=>{
     const filterKey = req.query.newest ? 'id' : 'vote';
     const filter = req.query.newest || req.query.most ? `ORDER BY ${filterKey} DESC` : 'WHERE 1';
-    const query = `SELECT * from features ${filter}`;
+    const query = `SELECT features.*, users.username as posted_by from features LEFT JOIN users on users.id = features.created_by ${filter}`;
     connection.query(query,function (error, results, fields) {
         if (error) {
             throw error
@@ -34,23 +34,34 @@ router.get('/',helper.isAuthorized,(req,res)=>{
 router.post('/',helper.isAuthorized,(req,res)=>{    
     const voted_people = '';
     const invited = req.body.invited != undefined ? req.body.invited.toString() : '' ;
-    const comments = '';
-    const created_by = req.header('user_id');
-    connection.query(`INSERT INTO features(title, description, vote, voted_people, invited, comments,created_by) VALUES
-                            (?,?,?,?,?,?,?)`,
-                            [req.body.title, req.body.description, "0", voted_people, invited, comments,created_by], function (error, results, fields) {
-        if (error) {
-            throw error
-        };
-        connection.query('SELECT * from features', function (error, results, fields) {
+    const groupIds = req.body.selectedGrps;
+    let ids = []
+    connection.query('select users from groups where id in (?)',[groupIds],(error,result,fields)=>{
+        result.map((m)=>{
+            ids = new Set([...ids,...m.users.split(','),...invited])
+        })
+        ids = [...ids].filter(f=>!isNaN(f)).toString()
+        // const kala =ids.filter(f=>!isNaN(f) )
+        const comments = '';
+        const created_by = req.header('user_id');
+        console.log("all ids",ids)
+        connection.query(`INSERT INTO features(title, description, vote, voted_people, invited, comments,created_by) VALUES
+                                (?,?,?,?,?,?,?)`,
+                                [req.body.title, req.body.description, "0", voted_people, ids, comments,created_by], function (error, results, fields) {
             if (error) {
                 throw error
-                res.send(error)
             };
-            const response = helper.prepareSuccessBody(results);
-            res.json(response)
+            connection.query('SELECT * from features', function (error, results, fields) {
+                if (error) {
+                    throw error
+                    res.send(error)
+                };
+                const response = helper.prepareSuccessBody(results);
+                res.json(response)
+            });
         });
-    });
+    })
+   
 })
 
 router.get('/:featureId',helper.isAuthorized,(req,res)=>{
@@ -90,7 +101,7 @@ router.put('/:featureId/vote',helper.isAuthorized,(req, res)=>{
     const userID = req.body.user_id
     connection.query("SELECT * FROM features WHERE id= ?",[req.params.featureId],(error, results, fields)=>{
         if(error) {
-            console.log("error in casting vote",error)
+            throw error
         }
         const record = results[0];
         const voted_people = record.voted_people.split(',').filter(d=>d);
@@ -98,7 +109,7 @@ router.put('/:featureId/vote',helper.isAuthorized,(req, res)=>{
         const vote_length = newVoted.length;
         connection.query("UPDATE features SET voted_people = ?, vote = ? where id = ?",[newVoted.toString(), `${vote_length}` ,req.params.featureId],(error, results, fields)=>{
             if(error) {
-                console.log("error in casting vote",error)
+                throw error
             }
             connection.query('SELECT * from features', function (error, results, fields) {
                 if (error) {
